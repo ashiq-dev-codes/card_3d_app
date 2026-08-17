@@ -10,6 +10,7 @@ class ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: 250,
       decoration: BoxDecoration(
         color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(28),
@@ -21,33 +22,31 @@ class ProductCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      product.category,
-                      style: const TextStyle(
-                        color: AppColors.accent,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
-                        letterSpacing: 0.6,
-                      ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product.category,
+                    style: const TextStyle(
+                      color: AppColors.accent,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                      letterSpacing: 0.6,
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      product.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.black,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        height: 1.25,
-                      ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    product.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      height: 1.25,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
               const SizedBox(width: 12),
               Container(
@@ -89,12 +88,7 @@ class ProductCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Expanded(
-            child: Image.asset(
-              product.imageAsset,
-              fit: BoxFit.contain,
-            ),
-          ),
+          Flexible(child: Image.asset(product.imageAsset, fit: BoxFit.contain)),
         ],
       ),
     );
