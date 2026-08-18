@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 
-import 'package:animations/animations.dart';
 import 'package:card_3d_app/feature/product/model/product.dart';
 import 'package:card_3d_app/feature/product_details/presentation/page/product_details_page.dart';
 import 'package:card_3d_app/shared/theme/app_colors.dart';
@@ -19,15 +18,31 @@ class ProductCard extends StatefulWidget {
 }
 
 class _ProductCardState extends State<ProductCard> {
-  VoidCallback? _openImage;
   bool _isPressed = false;
+
+  void _openDetails() {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        transitionDuration: const Duration(milliseconds: 500),
+        reverseTransitionDuration: const Duration(milliseconds: 400),
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            ProductDetailsPage(product: widget.product),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(
+            opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+            child: child,
+          );
+        },
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final product = widget.product;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => _openImage?.call(),
+      onTap: _openDetails,
       onTapDown: (_) => setState(() => _isPressed = true),
       onTapUp: (_) => setState(() => _isPressed = false),
       onTapCancel: () => setState(() => _isPressed = false),
@@ -123,27 +138,15 @@ class _ProductCardState extends State<ProductCard> {
                 ),
               ),
               Expanded(
-                child: OpenContainer<void>(
-                  tappable: false,
-                  transitionDuration: const Duration(milliseconds: 550),
-                  transitionType: ContainerTransitionType.fadeThrough,
-                  closedElevation: 0,
-                  closedColor: AppColors.cardBackground,
-                  middleColor: AppColors.whiteColor,
-                  closedShape: const RoundedRectangleBorder(),
-                  openColor: AppColors.whiteColor,
-                  openBuilder: (context, action) =>
-                      ProductDetailsPage(product: product),
-                  closedBuilder: (context, action) {
-                    _openImage = action;
-                    return Transform.rotate(
-                      angle: -_kImageRotationDegrees * math.pi / 180,
-                      child: Image.asset(
-                        product.imageAsset,
-                        fit: BoxFit.contain,
-                      ),
-                    );
-                  },
+                child: Hero(
+                  tag: 'product-image-${product.id}',
+                  flightShuttleBuilder: productImageFlightShuttleBuilder(
+                    product.imageAsset,
+                  ),
+                  child: Transform.rotate(
+                    angle: -_kImageRotationDegrees * math.pi / 180,
+                    child: Image.asset(product.imageAsset, fit: BoxFit.contain),
+                  ),
                 ),
               ),
             ],

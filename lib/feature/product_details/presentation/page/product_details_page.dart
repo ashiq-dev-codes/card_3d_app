@@ -78,9 +78,15 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                     ),
                     SizedBox(
                       height: 280,
-                      child: Image.asset(
-                        product.imageAsset,
-                        fit: BoxFit.contain,
+                      child: Hero(
+                        tag: 'product-image-${product.id}',
+                        flightShuttleBuilder: productImageFlightShuttleBuilder(
+                          product.imageAsset,
+                        ),
+                        child: Image.asset(
+                          product.imageAsset,
+                          fit: BoxFit.contain,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 8),
