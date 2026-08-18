@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'dart:ui';
 
 import 'package:card_3d_app/feature/product/model/product.dart';
 import 'package:card_3d_app/shared/theme/app_colors.dart';
@@ -356,6 +355,12 @@ class _StretchyProductImageState extends State<_StretchyProductImage>
     final double intensity = ((nx.abs() + ny.abs()) / 2).clamp(0.0, 1.0);
     final double stretch = 1 + 0.16 * intensity;
 
+    // Shifts from cyan toward violet/magenta as the drag moves horizontally,
+    // giving the glow an iridescent, holographic-card feel instead of a flat
+    // single-color halo.
+    final double hue = 190 + ((nx + 1) / 2) * 130;
+    final Color holoColor = HSVColor.fromAHSV(1, hue, 0.7, 1).toColor();
+
     final matrix = Matrix4.identity()
       ..setEntry(3, 2, 0.0018)
       ..rotateX(-ny * _maxTiltRadians)
@@ -371,66 +376,39 @@ class _StretchyProductImageState extends State<_StretchyProductImage>
         alignment: Alignment.center,
         clipBehavior: Clip.none,
         children: [
-          // Ambient cyan glow that ignites while dragging.
-          AnimatedOpacity(
-            opacity: intensity,
-            duration: const Duration(milliseconds: 120),
-            child: Container(
-              width: 160,
-              height: 160,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.accent.withValues(alpha: 0.55),
-                    blurRadius: 70,
-                    spreadRadius: 10,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          // Floating drop shadow: shifts opposite the tilt and softens as
-          // the "object" lifts further off the surface.
-          Positioned(
-            bottom: 6,
-            child: ImageFiltered(
-              imageFilter: ImageFilter.blur(sigmaX: 14, sigmaY: 8),
-              child: Opacity(
-                opacity: (0.32 - 0.16 * intensity).clamp(0.12, 0.32),
-                child: Container(
-                  width: 140 - 30 * intensity,
-                  height: 20,
-                  decoration: BoxDecoration(
-                    color: AppColors.blackColor,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  transform: Matrix4.translationValues(-nx * 22, 0, 0),
-                ),
-              ),
-            ),
-          ),
           Transform.translate(
             offset: _dragOffset * 0.25,
             child: Transform(
               alignment: Alignment.center,
               transform: matrix,
               child: ShaderMask(
-                blendMode: BlendMode.plus,
+                blendMode: BlendMode.softLight,
                 shaderCallback: (bounds) {
                   final double sweep = 0.5 + nx * 0.35;
+                  final double eased = Curves.easeOut.transform(intensity);
+                  final Color sheenColor = Color.lerp(
+                    Colors.white,
+                    holoColor,
+                    0.2,
+                  )!;
+                  final Color core = sheenColor.withValues(alpha: eased);
+                  final Color soft = sheenColor.withValues(alpha: eased * 0.35);
                   return LinearGradient(
                     begin: Alignment(-1 + ny * 0.6, -1),
                     end: Alignment(1 + ny * 0.6, 1),
                     colors: [
                       Colors.transparent,
-                      Colors.white.withValues(alpha: 0.5 * intensity + 0.08),
+                      soft,
+                      core,
+                      soft,
                       Colors.transparent,
                     ],
                     stops: [
-                      (sweep - 0.18).clamp(0.0, 1.0),
+                      (sweep - 0.16).clamp(0.0, 1.0),
+                      (sweep - 0.06).clamp(0.0, 1.0),
                       sweep.clamp(0.0, 1.0),
-                      (sweep + 0.18).clamp(0.0, 1.0),
+                      (sweep + 0.06).clamp(0.0, 1.0),
+                      (sweep + 0.16).clamp(0.0, 1.0),
                     ],
                   ).createShader(bounds);
                 },
