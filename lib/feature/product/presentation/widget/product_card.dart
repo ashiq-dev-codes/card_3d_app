@@ -6,8 +6,6 @@ import 'package:card_3d_app/shared/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-const double _kImageRotationDegrees = 14.02;
-
 class ProductCard extends StatefulWidget {
   const ProductCard({super.key, required this.product});
 
@@ -23,14 +21,21 @@ class _ProductCardState extends State<ProductCard> {
   void _openDetails() {
     Navigator.of(context).push(
       PageRouteBuilder(
-        transitionDuration: const Duration(milliseconds: 500),
-        reverseTransitionDuration: const Duration(milliseconds: 400),
+        transitionDuration: const Duration(milliseconds: 550),
+        reverseTransitionDuration: const Duration(milliseconds: 450),
         pageBuilder: (context, animation, secondaryAnimation) =>
             ProductDetailsPage(product: widget.product),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final curved = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+          );
           return FadeTransition(
-            opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
-            child: child,
+            opacity: curved,
+            child: ScaleTransition(
+              scale: Tween<double>(begin: 0.92, end: 1).animate(curved),
+              child: child,
+            ),
           );
         },
       ),
@@ -140,11 +145,13 @@ class _ProductCardState extends State<ProductCard> {
               Expanded(
                 child: Hero(
                   tag: 'product-image-${product.id}',
+                  createRectTween: (begin, end) =>
+                      MaterialRectArcTween(begin: begin, end: end),
                   flightShuttleBuilder: productImageFlightShuttleBuilder(
                     product.imageAsset,
                   ),
                   child: Transform.rotate(
-                    angle: -_kImageRotationDegrees * math.pi / 180,
+                    angle: -kProductImageRotationDegrees * math.pi / 180,
                     child: Image.asset(product.imageAsset, fit: BoxFit.contain),
                   ),
                 ),
