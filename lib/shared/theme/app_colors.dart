@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 
 abstract class AppColors {
   // Base Colors
-  static const Color whiteColor = Color(0xFFFFFFFF);
+  static Color mainPrimary = Color(0xFF28B5E1);
+  static Color primaryColor = Color(0xFF28B5E1);
+  static Color secondaryColor = Color(0xFFB8D2DE);
   static const Color blackColor = Color(0xFF000000);
+  static const Color whiteColor = Color(0xFFFFFFFF);
 
   // Accent Colors
   static const Color accent100 = Color(0xFFFCFCFD);
@@ -67,6 +70,10 @@ abstract class AppColors {
   static const Color warning950 = Color(0xFF4E1D09);
 
   // Add secondary and other colors similarly...
+
+  // App Colors
+  static const Color iconColor1 = Color(0xFF414D55);
+  static const Color borderColor1 = Color(0xFFA2C4D4);
 
   static const Color background = Color(0xFF14161D);
   static const Color accent = Color(0xFF29B6E8);
