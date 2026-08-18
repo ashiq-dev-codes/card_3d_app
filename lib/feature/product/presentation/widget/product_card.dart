@@ -1,7 +1,11 @@
+import 'dart:math' as math;
+
 import 'package:card_3d_app/feature/product/model/product.dart';
 import 'package:card_3d_app/shared/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+
+const double _kImageRotationDegrees = 14.02;
 
 class ProductCard extends StatelessWidget {
   const ProductCard({super.key, required this.product});
@@ -12,9 +16,10 @@ class ProductCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: 250,
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(4),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -96,7 +101,12 @@ class ProductCard extends StatelessWidget {
               ],
             ),
           ),
-          Flexible(child: Image.asset(product.imageAsset, fit: BoxFit.contain)),
+          Flexible(
+            child: Transform.rotate(
+              angle: -_kImageRotationDegrees * math.pi / 180,
+              child: Image.asset(product.imageAsset, fit: BoxFit.contain),
+            ),
+          ),
         ],
       ),
     );

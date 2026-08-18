@@ -18,6 +18,13 @@ const List<Product> _products = [
     price: 254.99,
     imageAsset: 'assets/images/3d_shoe_4x.png',
   ),
+  Product(
+    id: '3',
+    category: 'SHOES',
+    title: 'Nike ZOOM Vaporfly NEXT Premium',
+    price: 254.99,
+    imageAsset: 'assets/images/3d_shoe_4x.png',
+  ),
 ];
 
 class ProductPage extends StatelessWidget {
