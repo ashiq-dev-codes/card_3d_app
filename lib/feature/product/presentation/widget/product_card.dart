@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:card_3d_app/feature/product/model/product.dart';
+import 'package:card_3d_app/feature/product_details/presentation/page/product_details_page.dart';
 import 'package:card_3d_app/shared/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -15,7 +16,22 @@ class ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () {},
+      onTap: () {
+        Navigator.of(context).push(
+          PageRouteBuilder(
+            transitionDuration: const Duration(milliseconds: 450),
+            reverseTransitionDuration: const Duration(milliseconds: 350),
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                ProductDetailsPage(product: product),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeTransition(
+                opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+                child: child,
+              );
+            },
+          ),
+        );
+      },
       splashColor: Colors.transparent,
       highlightColor: Colors.transparent,
       child: Container(
@@ -106,9 +122,14 @@ class ProductCard extends StatelessWidget {
               ),
             ),
             Flexible(
-              child: Transform.rotate(
-                angle: -_kImageRotationDegrees * math.pi / 180,
-                child: Image.asset(product.imageAsset, fit: BoxFit.contain),
+              child: Hero(
+                tag: 'product-image-${product.id}',
+                flightShuttleBuilder:
+                    productImageFlightShuttleBuilder(product.imageAsset),
+                child: Transform.rotate(
+                  angle: -_kImageRotationDegrees * math.pi / 180,
+                  child: Image.asset(product.imageAsset, fit: BoxFit.contain),
+                ),
               ),
             ),
           ],
