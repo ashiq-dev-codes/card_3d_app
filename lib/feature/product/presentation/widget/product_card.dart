@@ -1,101 +1,164 @@
+import 'dart:math' as math;
+
 import 'package:card_3d_app/feature/product/model/product.dart';
+import 'package:card_3d_app/feature/product_details/presentation/page/product_details_page.dart';
 import 'package:card_3d_app/shared/theme/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-class ProductCard extends StatelessWidget {
+class ProductCard extends StatefulWidget {
   const ProductCard({super.key, required this.product});
 
   final Product product;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(28),
+  State<ProductCard> createState() => _ProductCardState();
+}
+
+class _ProductCardState extends State<ProductCard> {
+  bool _isPressed = false;
+
+  void _openDetails() {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        transitionDuration: const Duration(milliseconds: 550),
+        reverseTransitionDuration: const Duration(milliseconds: 450),
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            ProductDetailsPage(product: widget.product),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final curved = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+          );
+          return FadeTransition(
+            opacity: curved,
+            child: ScaleTransition(
+              scale: Tween<double>(begin: 0.92, end: 1).animate(curved),
+              child: child,
+            ),
+          );
+        },
       ),
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final product = widget.product;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _openDetails,
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) => setState(() => _isPressed = false),
+      onTapCancel: () => setState(() => _isPressed = false),
+      child: AnimatedScale(
+        scale: _isPressed ? 0.97 : 1,
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOut,
+        child: Container(
+          width: 250,
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: AppColors.cardBackground,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Column(
+              const SizedBox(height: 23.33),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.67),
+                child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      product.category,
-                      style: const TextStyle(
-                        color: AppColors.accent,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
-                        letterSpacing: 0.6,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            product.category,
+                            style: TextStyle(
+                              fontSize: 8,
+                              letterSpacing: 0.6,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.primaryColor,
+                            ),
+                          ),
+                          Text(
+                            product.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.blackColor,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      product.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.black,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        height: 1.25,
+                    const SizedBox(width: 12),
+                    Container(
+                      padding: const EdgeInsets.all(6.67),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          width: 0.83,
+                          color: AppColors.borderColor1,
+                        ),
+                        borderRadius: BorderRadius.circular(6.67),
+                        color: AppColors.secondaryColor.withValues(alpha: 0.50),
+                      ),
+                      child: Icon(
+                        LucideIcons.maximize2,
+                        size: 13,
+                        color: AppColors.iconColor1,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
-              Container(
-                width: 44,
-                height: 44,
-                decoration: const BoxDecoration(
-                  color: AppColors.chipBackground,
-                  shape: BoxShape.circle,
+              const SizedBox(height: 6.67),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.67),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      r'$',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w300,
+                        color: AppColors.primaryColor,
+                      ),
+                    ),
+                    Text(
+                      product.price.toStringAsFixed(2),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.primaryColor,
+                      ),
+                    ),
+                  ],
                 ),
-                child: const Icon(
-                  Icons.open_in_full,
-                  size: 18,
-                  color: Colors.black87,
+              ),
+              Expanded(
+                child: Hero(
+                  tag: 'product-image-${product.id}',
+                  createRectTween: (begin, end) =>
+                      MaterialRectArcTween(begin: begin, end: end),
+                  flightShuttleBuilder: productImageFlightShuttleBuilder(
+                    product.imageAsset,
+                  ),
+                  child: Transform.rotate(
+                    angle: -kProductImageRotationDegrees * math.pi / 180,
+                    child: Image.asset(product.imageAsset, fit: BoxFit.contain),
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                r'$',
-                style: TextStyle(
-                  color: AppColors.accent,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 18,
-                ),
-              ),
-              const SizedBox(width: 2),
-              Text(
-                product.price.toStringAsFixed(2),
-                style: const TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 22,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: Image.asset(
-              product.imageAsset,
-              fit: BoxFit.contain,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
