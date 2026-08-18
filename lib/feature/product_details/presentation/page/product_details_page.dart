@@ -1,3 +1,6 @@
+import 'dart:math' as math;
+import 'dart:ui';
+
 import 'package:card_3d_app/feature/product/model/product.dart';
 import 'package:card_3d_app/shared/theme/app_colors.dart';
 import 'package:flutter/material.dart';
@@ -127,16 +130,19 @@ class _ProductDetailsPageState extends State<ProductDetailsPage>
                     ),
                     SizedBox(
                       height: 280,
-                      child: Hero(
-                        tag: 'product-image-${product.id}',
-                        createRectTween: (begin, end) =>
-                            MaterialRectArcTween(begin: begin, end: end),
-                        flightShuttleBuilder: productImageFlightShuttleBuilder(
-                          product.imageAsset,
-                        ),
-                        child: Image.asset(
-                          product.imageAsset,
-                          fit: BoxFit.contain,
+                      child: _StretchyProductImage(
+                        child: Hero(
+                          tag: 'product-image-${product.id}',
+                          createRectTween: (begin, end) =>
+                              MaterialRectArcTween(begin: begin, end: end),
+                          flightShuttleBuilder:
+                              productImageFlightShuttleBuilder(
+                                product.imageAsset,
+                              ),
+                          child: Image.asset(
+                            product.imageAsset,
+                            fit: BoxFit.contain,
+                          ),
                         ),
                       ),
                     ),
@@ -268,6 +274,171 @@ class _ProductDetailsPageState extends State<ProductDetailsPage>
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Wraps [child] with a draggable perspective tilt + stretch: dragging warps
+/// the image like a physical 3D plane being pulled, springing back on release.
+class _StretchyProductImage extends StatefulWidget {
+  const _StretchyProductImage({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_StretchyProductImage> createState() => _StretchyProductImageState();
+}
+
+class _StretchyProductImageState extends State<_StretchyProductImage>
+    with SingleTickerProviderStateMixin {
+  static const double _maxDrag = 90;
+  static const double _maxTiltRadians = 0.5;
+
+  late final AnimationController _springController;
+  Animation<Offset>? _springAnimation;
+  Offset _dragOffset = Offset.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    _springController =
+        AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 700),
+        )..addListener(() {
+          final springAnimation = _springAnimation;
+          if (springAnimation != null) {
+            setState(() => _dragOffset = springAnimation.value);
+          }
+        });
+  }
+
+  @override
+  void dispose() {
+    _springController.dispose();
+    super.dispose();
+  }
+
+  // Rubber-band damping: resists more the further it's already stretched.
+  // dart:math has no tanh, so it's expanded from exp() directly.
+  double _damp(double delta) {
+    final double e = math.exp(2 * delta / _maxDrag);
+    final double tanh = (e - 1) / (e + 1);
+    return _maxDrag * tanh;
+  }
+
+  void _onPanStart(DragStartDetails details) {
+    _springController.stop();
+  }
+
+  void _onPanUpdate(DragUpdateDetails details) {
+    setState(() {
+      _dragOffset = Offset(
+        _damp(_dragOffset.dx + details.delta.dx),
+        _damp(_dragOffset.dy + details.delta.dy),
+      );
+    });
+  }
+
+  void _onPanEnd(DragEndDetails details) {
+    _springAnimation = Tween<Offset>(begin: _dragOffset, end: Offset.zero)
+        .animate(
+          CurvedAnimation(parent: _springController, curve: Curves.elasticOut),
+        );
+    _springController.forward(from: 0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final double nx = (_dragOffset.dx / _maxDrag).clamp(-1.0, 1.0);
+    final double ny = (_dragOffset.dy / _maxDrag).clamp(-1.0, 1.0);
+    final double intensity = ((nx.abs() + ny.abs()) / 2).clamp(0.0, 1.0);
+    final double stretch = 1 + 0.16 * intensity;
+
+    final matrix = Matrix4.identity()
+      ..setEntry(3, 2, 0.0018)
+      ..rotateX(-ny * _maxTiltRadians)
+      ..rotateY(nx * _maxTiltRadians)
+      ..scaleByDouble(stretch, stretch, stretch, 1);
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onPanStart: _onPanStart,
+      onPanUpdate: _onPanUpdate,
+      onPanEnd: _onPanEnd,
+      child: Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          // Ambient cyan glow that ignites while dragging.
+          AnimatedOpacity(
+            opacity: intensity,
+            duration: const Duration(milliseconds: 120),
+            child: Container(
+              width: 160,
+              height: 160,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.accent.withValues(alpha: 0.55),
+                    blurRadius: 70,
+                    spreadRadius: 10,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Floating drop shadow: shifts opposite the tilt and softens as
+          // the "object" lifts further off the surface.
+          Positioned(
+            bottom: 6,
+            child: ImageFiltered(
+              imageFilter: ImageFilter.blur(sigmaX: 14, sigmaY: 8),
+              child: Opacity(
+                opacity: (0.32 - 0.16 * intensity).clamp(0.12, 0.32),
+                child: Container(
+                  width: 140 - 30 * intensity,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    color: AppColors.blackColor,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  transform: Matrix4.translationValues(-nx * 22, 0, 0),
+                ),
+              ),
+            ),
+          ),
+          Transform.translate(
+            offset: _dragOffset * 0.25,
+            child: Transform(
+              alignment: Alignment.center,
+              transform: matrix,
+              child: ShaderMask(
+                blendMode: BlendMode.plus,
+                shaderCallback: (bounds) {
+                  final double sweep = 0.5 + nx * 0.35;
+                  return LinearGradient(
+                    begin: Alignment(-1 + ny * 0.6, -1),
+                    end: Alignment(1 + ny * 0.6, 1),
+                    colors: [
+                      Colors.transparent,
+                      Colors.white.withValues(alpha: 0.5 * intensity + 0.08),
+                      Colors.transparent,
+                    ],
+                    stops: [
+                      (sweep - 0.18).clamp(0.0, 1.0),
+                      sweep.clamp(0.0, 1.0),
+                      (sweep + 0.18).clamp(0.0, 1.0),
+                    ],
+                  ).createShader(bounds);
+                },
+                child: widget.child,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
